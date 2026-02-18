@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 
-const MAX_SIZE_MB = 5;
+const MAX_SIZE_MB = 50;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png'];
 const ACCEPT_STR = '.jpg,.jpeg,.png,image/jpeg,image/png';
