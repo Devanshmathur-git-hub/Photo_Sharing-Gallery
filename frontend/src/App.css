@@ -315,6 +315,85 @@ body {
   box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--gallery-primary);
 }
 
+.drop-zone-multi {
+  width: 100%;
+  text-align: left;
+}
+
+.drop-zone-multi-previews {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+}
+
+.drop-zone-preview-item {
+  position: relative;
+  width: 80px;
+  flex-shrink: 0;
+}
+
+.drop-zone-preview-item img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: var(--gallery-radius-sm);
+  display: block;
+  background: var(--gallery-border);
+}
+
+.drop-zone-preview-name {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--gallery-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 0.25rem;
+}
+
+.drop-zone-preview-item .drop-zone-remove {
+  top: 2px;
+  right: 2px;
+  width: 22px;
+  height: 22px;
+  font-size: 1rem;
+}
+
+.drop-zone-more {
+  font-size: 0.85rem;
+  color: var(--gallery-text-muted);
+  margin: 0 0 0.5rem;
+}
+
+.drop-zone-multi-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.drop-zone-count {
+  font-size: 0.9rem;
+  color: var(--gallery-text-muted);
+}
+
+.drop-zone-clear {
+  background: none;
+  border: none;
+  color: var(--gallery-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+}
+
+.drop-zone-clear:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
 /* ========== Section & empty state ========== */
 .gallery-section-title {
   font-size: 1.2rem;

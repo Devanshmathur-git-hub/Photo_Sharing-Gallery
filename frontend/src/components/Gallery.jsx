@@ -30,18 +30,20 @@ function Gallery() {
     fetchPhotos();
   }, [fetchPhotos]);
 
-  const handleUpload = async ({ file, title, description }) => {
+  const handleUpload = async ({ files, title, description }) => {
+    const fileList = Array.isArray(files) ? files : [files];
+    if (fileList.length === 0) return;
     setUploading(true);
     setUploadError('');
     const formData = new FormData();
-    formData.append('image', file);
+    for (const file of fileList) {
+      formData.append('image', file);
+    }
     formData.append('title', title);
     formData.append('description', description);
     try {
-      await axios.post(`${API_BASE}/api/photos`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      setToastMessage({ type: 'success', text: 'Photo uploaded.' });
+      await axios.post(`${API_BASE}/api/photos`, formData);
+      setToastMessage({ type: 'success', text: fileList.length === 1 ? 'Photo uploaded.' : `${fileList.length} photos uploaded.` });
       fetchPhotos();
     } catch (err) {
       const msg = err.response?.data?.error || 'Upload failed.';

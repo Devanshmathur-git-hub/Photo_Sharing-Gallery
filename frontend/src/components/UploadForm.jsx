@@ -1,9 +1,10 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 const MAX_SIZE_MB = 5;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png'];
 const ACCEPT_STR = '.jpg,.jpeg,.png,image/jpeg,image/png';
+const MAX_FILES = 20;
 
 function validateFile(file) {
   if (!file) return null;
@@ -17,34 +18,47 @@ function validateFile(file) {
 function UploadForm({ onUpload, uploading, error, clearError }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [file, setFile] = useState(null);
+  const [files, setFiles] = useState([]);
+  const [previewUrls, setPreviewUrls] = useState([]);
   const [fileError, setFileError] = useState('');
-  const [previewUrl, setPreviewUrl] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef(null);
 
-  const setFileWithPreview = (newFile) => {
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setPreviewUrl(null);
-    setFile(newFile);
-    if (newFile) setPreviewUrl(URL.createObjectURL(newFile));
+  useEffect(() => {
+    return () => {
+      previewUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [previewUrls]);
+
+  const setFilesWithPreviews = (newFiles) => {
+    const list = Array.isArray(newFiles) ? [...newFiles] : newFiles ? [newFiles] : [];
+    previewUrls.forEach((url) => URL.revokeObjectURL(url));
+    const urls = list.map((f) => URL.createObjectURL(f));
+    setPreviewUrls(urls);
+    setFiles(list);
   };
 
   const handleFileChange = (e) => {
-    const selected = e.target.files?.[0];
+    const selected = e.target.files;
     setFileError('');
     clearError?.();
-    if (!selected) {
-      setFileWithPreview(null);
+    if (!selected?.length) {
+      setFilesWithPreviews([]);
       return;
     }
-    const err = validateFile(selected);
-    if (err) {
-      setFileError(err);
-      setFileWithPreview(null);
-      return;
+    const list = Array.from(selected).slice(0, MAX_FILES);
+    if (Array.from(selected).length > MAX_FILES) {
+      setFileError(`Maximum ${MAX_FILES} files. Only first ${MAX_FILES} selected.`);
     }
-    setFileWithPreview(selected);
+    for (const file of list) {
+      const err = validateFile(file);
+      if (err) {
+        setFileError(err);
+        setFilesWithPreviews([]);
+        return;
+      }
+    }
+    setFilesWithPreviews(list);
   };
 
   const handleDragOver = (e) => {
@@ -65,34 +79,50 @@ function UploadForm({ onUpload, uploading, error, clearError }) {
     setIsDragging(false);
     setFileError('');
     clearError?.();
-    const dropped = e.dataTransfer?.files?.[0];
-    if (!dropped) return;
-    const err = validateFile(dropped);
-    if (err) {
-      setFileError(err);
-      setFileWithPreview(null);
+    const dropped = e.dataTransfer?.files;
+    if (!dropped?.length) return;
+    const list = Array.from(dropped).filter((f) => f.type.startsWith('image/')).slice(0, MAX_FILES);
+    if (list.length === 0) {
+      setFileError('Only .jpg, .jpeg, and .png images are allowed.');
       return;
     }
-    setFileWithPreview(dropped);
+    for (const file of list) {
+      const err = validateFile(file);
+      if (err) {
+        setFileError(err);
+        setFilesWithPreviews([]);
+        return;
+      }
+    }
+    setFilesWithPreviews(list);
     if (inputRef.current) inputRef.current.value = '';
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!file) {
-      setFileError('Please select or drop an image.');
+    if (files.length === 0) {
+      setFileError('Please select or drop one or more images.');
       return;
     }
-    onUpload({ file, title: title.trim() || 'Untitled', description: description.trim() });
+    onUpload({ files, title: title.trim() || 'Untitled', description: description.trim() });
     setTitle('');
     setDescription('');
-    setFileWithPreview(null);
+    setFilesWithPreviews([]);
     setFileError('');
     if (inputRef.current) inputRef.current.value = '';
   };
 
-  const clearFile = () => {
-    setFileWithPreview(null);
+  const removeFile = (index) => {
+    const newFiles = files.filter((_, i) => i !== index);
+    const newUrls = previewUrls.filter((_, i) => i !== index);
+    URL.revokeObjectURL(previewUrls[index]);
+    setPreviewUrls(newUrls);
+    setFiles(newFiles);
+    setFileError('');
+  };
+
+  const clearAll = () => {
+    setFilesWithPreviews([]);
     setFileError('');
     if (inputRef.current) inputRef.current.value = '';
   };
@@ -102,8 +132,8 @@ function UploadForm({ onUpload, uploading, error, clearError }) {
   return (
     <div className="upload-card">
       <div className="upload-card-body">
-        <h2 className="upload-title">Upload a photo</h2>
-        <p className="upload-subtitle">Drag & drop or click to choose</p>
+        <h2 className="upload-title">Upload photos</h2>
+        <p className="upload-subtitle">Drag & drop or click to choose (up to {MAX_FILES} images)</p>
 
         <form onSubmit={handleSubmit}>
           <input
@@ -112,35 +142,51 @@ function UploadForm({ onUpload, uploading, error, clearError }) {
             className="d-none"
             id="image"
             accept={ACCEPT_STR}
+            multiple
             onChange={handleFileChange}
             disabled={uploading}
           />
 
           <div
-            className={`drop-zone ${isDragging ? 'drop-zone--active' : ''} ${file ? 'drop-zone--has-file' : ''}`}
+            className={`drop-zone ${isDragging ? 'drop-zone--active' : ''} ${files.length ? 'drop-zone--has-file' : ''}`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            onClick={() => !file && inputRef.current?.click()}
+            onClick={() => !files.length && inputRef.current?.click()}
           >
-            {file && previewUrl ? (
-              <div className="drop-zone-preview">
-                <img src={previewUrl} alt="Preview" />
-                <div className="drop-zone-preview-info">
-                  <span className="drop-zone-filename">{file.name}</span>
-                  <span className="drop-zone-size">
-                    {(file.size / 1024).toFixed(1)} KB
-                  </span>
+            {files.length > 0 ? (
+              <div className="drop-zone-multi">
+                <div className="drop-zone-multi-previews">
+                  {files.slice(0, 5).map((file, i) => (
+                    <div key={i} className="drop-zone-preview-item">
+                      <img src={previewUrls[i]} alt="" />
+                      <span className="drop-zone-preview-name">{file.name}</span>
+                      <button
+                        type="button"
+                        className="drop-zone-remove"
+                        onClick={(e) => { e.stopPropagation(); removeFile(i); }}
+                        disabled={uploading}
+                        aria-label="Remove"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
                 </div>
-                <button
-                  type="button"
-                  className="drop-zone-remove"
-                  onClick={(e) => { e.stopPropagation(); clearFile(); }}
-                  disabled={uploading}
-                  aria-label="Remove file"
-                >
-                  ×
-                </button>
+                {files.length > 5 && (
+                  <p className="drop-zone-more">+{files.length - 5} more</p>
+                )}
+                <div className="drop-zone-multi-actions">
+                  <span className="drop-zone-count">{files.length} file(s) selected</span>
+                  <button
+                    type="button"
+                    className="drop-zone-clear"
+                    onClick={(e) => { e.stopPropagation(); clearAll(); }}
+                    disabled={uploading}
+                  >
+                    Clear all
+                  </button>
+                </div>
               </div>
             ) : (
               <>
@@ -149,10 +195,10 @@ function UploadForm({ onUpload, uploading, error, clearError }) {
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                     <polyline points="17 8 12 3 7 8" />
                     <line x1="12" y1="3" x2="12" y2="15" />
-                </svg>
+                  </svg>
                 </div>
-                <p className="drop-zone-text">Drop your image here</p>
-                <p className="drop-zone-hint">JPG, PNG up to {MAX_SIZE_MB}MB</p>
+                <p className="drop-zone-text">Drop your images here</p>
+                <p className="drop-zone-hint">JPG, PNG up to {MAX_SIZE_MB}MB each · max {MAX_FILES} files</p>
               </>
             )}
           </div>
@@ -168,7 +214,7 @@ function UploadForm({ onUpload, uploading, error, clearError }) {
                 onChange={(e) => setTitle(e.target.value)}
                 disabled={uploading}
               />
-              <label htmlFor="title">Title</label>
+              <label htmlFor="title">Title (used for all)</label>
             </div>
             <div className="form-floating mb-3">
               <textarea
@@ -180,7 +226,7 @@ function UploadForm({ onUpload, uploading, error, clearError }) {
                 onChange={(e) => setDescription(e.target.value)}
                 disabled={uploading}
               />
-              <label htmlFor="description">Description (optional)</label>
+              <label htmlFor="description">Description (optional, for all)</label>
             </div>
           </div>
 
@@ -190,14 +236,14 @@ function UploadForm({ onUpload, uploading, error, clearError }) {
             </div>
           )}
 
-          <button type="submit" className="btn-upload" disabled={uploading || !file}>
+          <button type="submit" className="btn-upload" disabled={uploading || !files.length}>
             {uploading ? (
               <>
                 <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
                 Uploading…
               </>
             ) : (
-              'Upload photo'
+              files.length > 1 ? `Upload ${files.length} photos` : 'Upload photo'
             )}
           </button>
         </form>
