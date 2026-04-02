@@ -95,3 +95,5 @@ Auth is mocked via middleware that assigns a single demo user; all requests use 
 - Delete photos (removes DB record and file from `backend/uploads/`)
 - Loading and error feedback (spinner on upload/delete, toasts/alerts)
 - Client-side checks for file type and 5MB limit
+
+

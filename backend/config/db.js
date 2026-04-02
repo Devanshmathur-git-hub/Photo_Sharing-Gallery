@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 /**
+
  * Connect to MongoDB database
  * @returns {Promise<void>}
  */
