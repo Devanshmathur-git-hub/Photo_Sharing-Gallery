@@ -57,6 +57,7 @@ This starts:
 
 Open [http://localhost:5173](http://localhost:5173) in your browser.
 
+
 The backend uses port **5001** by default to avoid conflict with macOS AirPlay Receiver (which uses 5000). If 5001 is in use, set `PORT` in `.env` to another port and update the frontend proxy in `frontend/vite.config.js` to match.
 
 ### Option B: Run backend and frontend in separate terminals
