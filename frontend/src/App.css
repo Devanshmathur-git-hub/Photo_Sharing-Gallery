@@ -51,6 +51,29 @@ body {
   padding-bottom: 4rem;
 }
 
+/* ========== Footer ========== */
+.gallery-footer {
+  display: flex;
+  justify-content: center;
+  padding: 1.25rem 1rem 2rem;
+  color: var(--gallery-text-muted);
+}
+
+.gallery-footer-link {
+  color: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px dashed var(--gallery-border);
+  padding-bottom: 2px;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.gallery-footer-link:hover {
+  color: var(--gallery-primary);
+  border-bottom-color: var(--gallery-primary);
+}
+
 /* ========== Hero ========== */
 .gallery-hero {
   text-align: center;
